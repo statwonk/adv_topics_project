@@ -67,10 +67,12 @@ library(survival)
 # All variables are not censored, they have "died", thus censor == 1
 data$censor <- 1
 
-tree <- rfsrc(Surv(comp_strength, censor) ~ ., data = data, ntree = 100)
+rsf_tree <- rfsrc(Surv(comp_strength, censor) ~ ., data = data, ntree = 100)
 
 # A look at variable relationships
-plot.variable(tree) # some interesting relationships appear
+plot.variable(rsf_tree) # some interesting relationships appear
+
+plot(rsf_tree)
 
 ###
 # How well does this model predict?
@@ -79,8 +81,62 @@ plot.variable(tree) # some interesting relationships appear
 pct_training <- 0.9
 
 train <- sample(1:nrow(data), round(nrow(data) * pct_training))
-  tree <- rfsrc(Surv(comp_strength, censor) ~ ., data = data[train, ], ntree = 100)
+  rsf_tree <- rfsrc(Surv(comp_strength, censor) ~ ., data = data[train, ], ntree = 500)
 
-preds <- predict(tree, data[-train, ], membership = TRUE)
+preds_rsf <- predict(rsf_tree, data[-train, ])
 
-plot(data[-train, "comp_strength"], preds$predicted)
+plot(data[-train, "comp_strength"], preds_rsf$predicted)
+
+preds_rsf_model <- lm(data[-train, "comp_strength"] ~ preds_rsf$predicted)
+
+preds_rsf <- predict(preds_rsf_model, data[-train, ])
+
+mse_rsf <- sum((data[-train, "comp_strength"] - preds_rsf) ^ 2) / length(preds_rsf)
+
+plot(data[-train, "comp_strength"], preds_rsf)
+
+rsf_output <- as.data.frame(list(actuals = data[-train, "comp_strength"], rsf_preds = preds_rsf), stringsAsFactors = FALSE)
+
+
+############
+# Random Forest
+############
+
+# install.packages("randomForest")
+rf_tree <- randomForest(comp_strength ~ ., data = data[ , -length(data)], ntree = 500)
+
+# A look at variable relationships
+# partialPlot(tree, x.var = "water", pred.data = data, add = FALSE) # some interesting relationships appear
+
+varImpPlot(rf_tree)
+
+###
+# How well does this model predict?
+###
+preds_rf <- predict(rf_tree, data[-train, -length(data)])
+
+plot(data[-train, "comp_strength"], preds_rf)
+
+mse_rf <- sum((data[-train, "comp_strength"] - preds_rf) ^ 2) / length(preds_rf)
+
+rf_output <- as.data.frame(list(actuals = data[-train, "comp_strength"], rf_preds = preds_rf), stringsAsFactors = FALSE)
+
+output_combo <- cbind(rsf_output[ , -1], rf_output)
+  names(output_combo) <- c("rsf_preds", "actuals", "rf_preds")
+
+########
+# OLS
+#######
+ols <- lm(comp_strength ~ ., data = data[ , -length(data)])
+
+preds_ols <- predict(ols, data[-train, -length(data)])
+
+plot(data[-train, "comp_strength"], preds_rf)
+
+output_combo <- melt(output_combo, "actuals")
+
+ggplot(output_combo, aes(x = actuals, y = value, colour = variable)) +
+  geom_smooth() +
+  geom_abline(intercept = 0, slope = 1)
+
+

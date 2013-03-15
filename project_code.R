@@ -4,4 +4,4 @@
 # https://github.com/cpeter9/adv_topics_project
 # Link to data: http://archive.ics.uci.edu/ml/datasets/Concrete+Compressive+Strength
 
-data <- read.csv("Concrete_Data.csv")
+data <- read.csv("Concrete_Data.csv") #this is cool

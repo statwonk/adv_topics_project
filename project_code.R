@@ -37,6 +37,10 @@ ggplot(df, aes(x = comp_strength, y = value)) +
   geom_point(alpha = 0.2) +
   facet_wrap(~ variable, scale = "free")
 
+##########
+# Variable transformation
+#########
+
 # Does logging help? Result: logging 'age' variable may be appropriate, not helpful for other variables
 df$value <- log(df$value)
 
@@ -48,6 +52,12 @@ ggplot(df, aes(x = comp_strength, y = value)) +
 ################################
 # Modelling
 ###############################
+
+
+
+############
+# Random Survival Forest
+############
 
 # install.packages("randomForestSRC")
 # install.packages("survival")
@@ -62,9 +72,15 @@ tree <- rfsrc(Surv(comp_strength, censor) ~ ., data = data, ntree = 100)
 # A look at variable relationships
 plot.variable(tree) # some interesting relationships appear
 
+###
+# How well does this model predict?
+###
 
+pct_training <- 0.9
 
+train <- sample(1:nrow(data), round(nrow(data) * pct_training))
+  tree <- rfsrc(Surv(comp_strength, censor) ~ ., data = data[train, ], ntree = 100)
 
+preds <- predict(tree, data[-train, ], membership = TRUE)
 
-
-
+plot(data[-train, "comp_strength"], preds$predicted)

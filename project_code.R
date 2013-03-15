@@ -119,10 +119,8 @@ plot(data[-train, "comp_strength"], preds_rf)
 
 mse_rf <- sum((data[-train, "comp_strength"] - preds_rf) ^ 2) / length(preds_rf)
 
-rf_output <- as.data.frame(list(actuals = data[-train, "comp_strength"], rf_preds = preds_rf), stringsAsFactors = FALSE)
+rf_output <- as.data.frame(list(rf_preds = preds_rf), stringsAsFactors = FALSE)
 
-output_combo <- cbind(rsf_output[ , -1], rf_output)
-  names(output_combo) <- c("rsf_preds", "actuals", "rf_preds")
 
 ########
 # OLS
@@ -131,8 +129,16 @@ ols <- lm(comp_strength ~ ., data = data[ , -length(data)])
 
 preds_ols <- predict(ols, data[-train, -length(data)])
 
-plot(data[-train, "comp_strength"], preds_rf)
+plot(data[-train, "comp_strength"], preds_ols)
 
+mse_ols <- sum((data[-train, "comp_strength"] - preds_ols) ^ 2) / length(preds_ols)
+
+ols_output <- as.data.frame(list(ols_preds = preds_ols), stringsAsFactors = FALSE)
+
+################
+# Model comparisons
+################
+output_combo <- cbind(rsf_output, rf_output, ols_output)
 output_combo <- melt(output_combo, "actuals")
 
 ggplot(output_combo, aes(x = actuals, y = value, colour = variable)) +

@@ -59,6 +59,11 @@ data$censor <- 1
 
 tree <- rfsrc(Surv(comp_strength, censor) ~ ., data = data, ntree = 100)
 
+# A look at variable relationships
+plot.variable(tree) # some interesting relationships appear
+
+
+
 
 
 
